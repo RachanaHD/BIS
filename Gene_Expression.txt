@@ -1,0 +1,104 @@
+#GeneExpresssionAlgorithm
+import random
+
+# Parameters
+POPULATION_SIZE = 20
+CHROMOSOME_LENGTH = 2  # Two variables: x and y
+MAX_GENERATIONS = 500
+MUTATION_RATE = 0.1
+CROSSOVER_RATE = 0.7
+
+# Objective Function (Fitness Function)
+def objective_function(x, y):
+    """Objective: Minimize f(x, y) = x^2 + y^2"""
+    return x**2 + y**2
+
+# Chromosome Class
+class Chromosome:
+    def __init__(self):
+        # Randomly initialize x and y in the range [-5, 5]
+        self.genes = [random.uniform(-5, 5) for _ in range(CHROMOSOME_LENGTH)]
+        self.fitness = 0.0
+
+    def evaluate_fitness(self):
+        """Calculate fitness: Fitness = 1 / (1 + objective_function)"""
+        x, y = self.genes
+        self.fitness = 1 / (1 + objective_function(x, y))
+
+# Initialize Population
+def generate_population(size):
+    return [Chromosome() for _ in range(size)]
+
+# Tournament Selection
+def select_parent(population):
+    """Select the fittest parent between two randomly chosen individuals."""
+    p1, p2 = random.sample(population, 2)
+    return p1 if p1.fitness > p2.fitness else p2
+
+# Crossover
+def crossover(parent1, parent2):
+    """Perform single-point crossover."""
+    child = Chromosome()
+    for i in range(CHROMOSOME_LENGTH):
+        if random.random() < CROSSOVER_RATE:
+            child.genes[i] = parent1.genes[i]
+        else:
+            child.genes[i] = parent2.genes[i]
+    return child
+
+# Mutation
+def mutate(chromosome):
+    """Randomly mutate genes with small changes."""
+    for i in range(CHROMOSOME_LENGTH):
+        if random.random() < MUTATION_RATE:
+            chromosome.genes[i] += random.gauss(0, 1)  # Add small Gaussian noise
+
+# Find Best Solution
+def find_best_solution(population):
+    """Return the chromosome with the highest fitness."""
+    return max(population, key=lambda chromo: chromo.fitness)
+
+# Main Genetic Algorithm
+def genetic_algorithm():
+    # Step 1: Initialize Population
+    population = generate_population(POPULATION_SIZE)
+
+    # Evaluate initial fitness
+    for individual in population:
+        individual.evaluate_fitness()
+
+    # Evolution Loop
+    for generation in range(MAX_GENERATIONS):
+        new_population = []
+
+        # Generate New Population
+        while len(new_population) < POPULATION_SIZE:
+            # Selection
+            parent1 = select_parent(population)
+            parent2 = select_parent(population)
+
+            # Crossover
+            child = crossover(parent1, parent2)
+
+            # Mutation
+            mutate(child)
+
+            # Evaluate Child's Fitness
+            child.evaluate_fitness()
+            new_population.append(child)
+
+        # Replace old population
+        population = new_population
+
+        # Find and Print Best Solution for Current Generation
+        best_solution = find_best_solution(population)
+        print(f"Generation {generation}: Best Fitness = {best_solution.fitness:.6f}, Genes = {best_solution.genes}")
+
+    # Final Best Solution
+    best_solution = find_best_solution(population)
+    print("\nBest Solution Found:")
+    print(f"Fitness: {best_solution.fitness:.6f}, Genes: {best_solution.genes}")
+
+# Run the Genetic Algorithm
+if __name__ == "__main__":
+    genetic_algorithm()

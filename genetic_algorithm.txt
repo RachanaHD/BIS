@@ -1,0 +1,97 @@
+import random
+
+def fitness(chromosome):
+    # Convert binary chromosome to decimal
+    x = int(''.join(map(str, chromosome)), 2)
+    # Fitness function f(x) = x^2
+    return x ** 2
+
+def decimal_to_binary(decimal, length):
+    return list(map(int, bin(decimal)[2:].zfill(length)))
+
+def generate_population_from_input(decimal_input, chromosome_length):
+    decimal_numbers = map(int, decimal_input.split())
+    population = [decimal_to_binary(decimal_number, chromosome_length) for decimal_number in decimal_numbers]
+    return population
+
+def calculate_selection_metrics(population, fitnesses):
+    total_fitness = sum(fitnesses)
+    probabilities = [f / total_fitness for f in fitnesses]
+    expected_counts = [p * len(population) for p in probabilities]
+    actual_counts = [round(count) for count in expected_counts]
+
+    return probabilities, expected_counts, actual_counts
+
+def select_parents(population, actual_counts):
+    selected_parents = []
+    for index, count in enumerate(actual_counts):
+        selected_parents.extend([population[index]] * count)
+    random.shuffle(selected_parents)  # Shuffle to ensure randomness
+    return selected_parents
+
+def crossover(parent1, parent2):
+    point = random.randint(1, len(parent1) - 1)
+    offspring1 = parent1[:point] + parent2[point:]
+    offspring2 = parent2[:point] + parent1[point:]
+    return offspring1, offspring2
+
+def mutate(chromosome, mutation_rate):
+    for i in range(len(chromosome)):
+        if random.random() < mutation_rate:
+            chromosome[i] = 1 - chromosome[i]  # Flip the bit
+    return chromosome
+
+# Parameters
+population_size = int(input("Enter population size: "))
+num_generations = int(input("Enter number of generations: "))
+mutation_rate = 0.01
+
+# User input for initial population in decimal
+decimal_input = input("Enter initial population as space-separated decimal numbers: ")
+chromosome_length = max(len(bin(int(d))) - 2 for d in decimal_input.split())
+
+population = generate_population_from_input(decimal_input, chromosome_length)
+
+# Main Genetic Algorithm Loop
+best_fitnesses = []
+for generation in range(num_generations):
+    fitnesses = [fitness(chromosome) for chromosome in population]
+
+    # Calculate selection metrics
+    probabilities, expected_counts, actual_counts = calculate_selection_metrics(population, fitnesses)
+
+    # Select parents based on actual counts
+    mating_pool = select_parents(population, actual_counts)
+
+    new_population = []
+    for i in range(0, len(mating_pool), 2):
+        parent1 = mating_pool[i]
+        parent2 = mating_pool[i + 1] if i + 1 < len(mating_pool) else mating_pool[0]  # Wrap around for odd counts
+        offspring1, offspring2 = crossover(parent1, parent2)
+
+        # Calculate fitness after crossover
+        fitness_offspring1 = fitness(offspring1)
+        fitness_offspring2 = fitness(offspring2)
+
+        print(f"Generation {generation}, Offspring Fitness after Crossover: {fitness_offspring1}, {fitness_offspring2}")
+
+        # Mutate offspring
+        mutated_offspring1 = mutate(offspring1, mutation_rate)
+        mutated_offspring2 = mutate(offspring2, mutation_rate)
+
+        # Calculate fitness after mutation
+        fitness_mutated_offspring1 = fitness(mutated_offspring1)
+        fitness_mutated_offspring2 = fitness(mutated_offspring2)
+
+        new_population.append(mutated_offspring1)
+        new_population.append(mutated_offspring2)
+
+    population = new_population
+    best_fitness = max(fitnesses)
+    best_fitnesses.append(best_fitness)
+    print(f"Generation {generation}: Best Fitness = {best_fitness}")
+
+# Final results
+final_fitnesses = [fitness(chromosome) for chromosome in population]
+print("Final Population (Binary):", population)
+print("Final Fitnesses:", final_fitnesses)

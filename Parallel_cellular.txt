@@ -1,0 +1,46 @@
+#ParallelCellularAlgorithms
+import numpy as np
+from multiprocessing import Pool
+
+def update_cell(cell_index, grid, size):
+    # Unpack the cell index (cell_index should be a tuple (x, y))
+    x, y = cell_index
+
+    # Define neighbors' indices (using a 2D Moore neighborhood)
+    neighbors = [
+        ((x-1) % size, y), ((x+1) % size, y),
+        (x, (y-1) % size), (x, (y+1) % size)
+    ]
+
+    # Compute new state (this could be any rule like majority, XOR, etc.)
+    new_state = sum(grid[n[0], n[1]] for n in neighbors) % 2  # example: majority rule
+    return (x, y, new_state)
+
+def parallel_update(grid, size, num_iterations):
+    pool = Pool(processes=4)  # Use 4 processes for parallel execution
+
+    for iteration in range(num_iterations):
+        print(f"Iteration {iteration + 1}:")
+
+        indices = [(x, y) for x in range(size) for y in range(size)]
+        result = pool.starmap(update_cell, [(i, grid, size) for i in indices])
+
+        # Update the grid with the new states
+        for x, y, new_state in result:
+            grid[x, y] = new_state
+
+        # Print the updated grid for this iteration
+        print(grid)
+
+    return grid
+
+# Initialize grid with random states (0 or 1)
+grid_size = 5
+grid = np.random.randint(2, size=(grid_size, grid_size))
+
+# Number of iterations to run
+num_iterations = 10
+
+# Parallel update and print iterations
+updated_grid = parallel_update(grid, grid_size, num_iterations)
+     
